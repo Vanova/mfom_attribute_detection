@@ -24,8 +24,8 @@ nasal, stop, vowel, voiced, coronal, dental, glottal, high, labial, low, middle,
 be extracted from a speech signal and considered as a universal phonetic speech features. The application of these features is diverse: 
 foreign accent detection, automatic speech recognition, spoken language recognition, e.t.c.
 
-**Note** this project is based on the on the ***stories*** subset of the [**OGI Multi-language Telephone Speech**](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.40.7091) 
-corpus. We are not allowed to publish it, because of the licence reason. 
+**Note** this project is based on the ***stories*** subset of the [**OGI Multi-language Telephone Speech**](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.40.7091) 
+corpus. We are not allowed to publish it here, because of the licence reason. 
 You may check another project with the MFoM framework on the open dataset: [Multi-label MFoM framework for DCASE 2016: Task 4](https://github.com/Vanova/mfom_dcase16_task4). 
 
 The proposed MFoM approaches are used in the series of works
