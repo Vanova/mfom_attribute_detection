@@ -12,10 +12,35 @@ The main abstract classes are in `base` folder.
 Structure of packages
 =====================
 
-
 ```
-Packages structure
-.............
-
+├── README.md
+├── base
+│   ├── data_loader.py
+│   ├── feature.py
+│   ├── model.py
+│   ├── pipeline.py
+│   └── trainer.py
+├── data_loader
+│   └── ogits.py
+├── features
+│   └── speech.py
+├── model
+│   ├── mfom.py
+│   ├── objectives.py
+│   └── sed_ogits.py
+├── pipeline
+│   └── ogits.py
+├── trainer
+│   ├── ogits.py
+│   └── ogits_hyper.py
+├── utils
+│   ├── config.py
+│   ├── dirs.py
+│   ├── io.py
+│   └── metrics.py
+└── visualize
+    ├── plot_net.py
+    ├── plotter.py
+    └── style.py
 ```
 
