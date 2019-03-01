@@ -4,7 +4,8 @@
 Project architecture
 =============================
 
-The main abstract classes are in `base` folder.
+The main abstract classes are in `base` folder. The implementations of the abstract classes 
+are in the corresponding folders.  
 
 ![Architecture of the base framework](../docs/figures/architecture_base_framework.png)
 
