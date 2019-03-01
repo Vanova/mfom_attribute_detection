@@ -8,8 +8,11 @@
 [Institute for Infocomm Research / A*Star / Singapore](https://www.a-star.edu.sg/i2r)
 
 Author: **Ivan Kukanov**, [Email](mailto:ivan@kukanov.com), [Homepage](http://www.kukanov.com), [GitHub](https://github.com/vanova)
+
 Supervisor: **Ville Hautamäki**, [Email](mailto:villeh@uef.fi), [Homepage](http://cs.joensuu.fi/~villeh/)
+
 Collaborator: **Sabato Marco Siniscalchi**, [Homepage](https://www.unikore.it/index.php/it/ingegneria-informatica-persone/docenti-del-corso/itemlist/category/1589-siniscalchi)
+
 Collaborator: **Kong Aik Lee**, [Homepage](https://sites.google.com/site/kongaikleesg/home)
 
 About
