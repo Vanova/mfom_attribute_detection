@@ -41,40 +41,37 @@ class OGITSModelTrainer(BaseTrainer):
                                                  fold=self.fold_id)
 
     def _init_callbacks(self, cv_gen):
-        self.callbacks.append(
-            ModelValidator(batch_gen=cv_gen,
-                           metrics=self.config['model'][self.train_mode]['metrics'],
-                           monitor=self.config['callback']['monitor'],
-                           mode=self.config['callback']['mode']))
+        valtor = ModelValidator(batch_gen=cv_gen,
+                                metrics=self.config['model'][self.train_mode]['metrics'],
+                                monitor=self.config['callback']['monitor'],
+                                mode=self.config['callback']['mode'])
 
-        self.callbacks.append(
-            ModelCheckpoint(
-                monitor=self.config['callback']['monitor'],
-                filepath=self.model_file,
-                mode=self.config['callback']['mode'],
-                save_best_only=self.config['callback']['chpt_save_best_only'],
-                save_weights_only=self.config['callback']['chpt_save_weights_only'],
-                verbose=self.verbose))
+        chkp = ModelCheckpoint(
+            monitor=self.config['callback']['monitor'],
+            filepath=self.model_file,
+            mode=self.config['callback']['mode'],
+            save_best_only=self.config['callback']['chpt_save_best_only'],
+            save_weights_only=self.config['callback']['chpt_save_weights_only'],
+            verbose=self.verbose)
 
-        self.callbacks.append(
-            ReduceLROnPlateau(monitor=self.config['callback']['monitor'],
-                              patience=self.config['callback']['lr_patience'],
-                              verbose=self.verbose,
-                              factor=self.config['callback']['lr_factor'],
-                              min_lr=self.config['callback']['lr_min']))
+        lr_sched = ReduceLROnPlateau(monitor=self.config['callback']['monitor'],
+                                     patience=self.config['callback']['lr_patience'],
+                                     verbose=self.verbose,
+                                     factor=self.config['callback']['lr_factor'],
+                                     min_lr=self.config['callback']['lr_min'])
 
-        self.callbacks.append(
-            EarlyStopping(monitor=self.config['callback']['monitor'],
-                          patience=self.config['callback']['estop_patience'],
-                          verbose=self.verbose,
-                          mode=self.config['callback']['mode'],
-                          min_delta=0.001))
+        e_stop = EarlyStopping(monitor=self.config['callback']['monitor'],
+                               patience=self.config['callback']['estop_patience'],
+                               verbose=self.verbose,
+                               mode=self.config['callback']['mode'],
+                               min_delta=0.001)
 
         log_dir = cfg.get_log_dir(self.train_mode, self.fold_id)
         print('LOG: %s' % log_dir)
-        self.callbacks.append(
-            TensorBoard(log_dir=log_dir,
-                        write_graph=self.config['callback']['tensorboard_write_graph']))
+        tb = TensorBoard(log_dir=log_dir,
+                         write_graph=self.config['callback']['tensorboard_write_graph'])
+
+        self.callbacks.append([valtor, chkp, lr_sched, e_stop, tb])
 
     @staticmethod
     def is_mfom_objective(model):
@@ -90,7 +87,7 @@ class OGITSModelTrainer(BaseTrainer):
                                          config=self.config['model'][self.train_mode],
                                          meta_data=self.data.meta_data)
 
-            cv_gen = DL.batch_handler(batch_type='sed_validation', #'sed_validation', 'validation'
+            cv_gen = DL.batch_handler(batch_type='sed_validation',
                                       data_file=self.data.feat_file,
                                       fold_lst=self.data.meta_data.fold_list(self.fold_id, 'validation'),
                                       config=self.config['model'][self.train_mode],
@@ -239,7 +236,7 @@ class ModelValidator(Callback):
             ps = cut_model.predict_on_batch(X_b)
             y_pred = np.vstack([y_pred, ps])
             y_true = np.vstack([y_true, Y_b])
-            # NOTE: it is fake loss, caz Y is fed
+            # NOTE: it is approximated loss, caz Y is fed
             if OGITSModelTrainer.is_mfom_objective(model):
                 X_b = [Y_b, X_b]
             l = model.test_on_batch(X_b, Y_b)
@@ -255,7 +252,7 @@ class ModelValidator(Callback):
             y_pred_m = y_pred[:, fmanner_ids]
 
             v_max, t_max = 0, 0
-            for t in [0.5]: #np.linspace(0.2, 0.7, 50):
+            for t in [0.5]:  # np.linspace(0.2, 0.7, 50):
                 p = mtx.step(y_pred_m, threshold=t)
                 v = mtx.micro_f1(y_true_m, p)
                 if v_max < v:
@@ -270,7 +267,7 @@ class ModelValidator(Callback):
             y_pred_p = y_pred[:, fplace_ids]
 
             v_max, t_max = 0, 0
-            for t in [0.5]: # np.linspace(0.2, 0.7, 50):
+            for t in [0.5]:  # np.linspace(0.2, 0.7, 50):
                 p = mtx.step(y_pred_p, threshold=t)
                 v = mtx.micro_f1(y_true_p, p)
                 if v_max < v:
@@ -283,7 +280,7 @@ class ModelValidator(Callback):
         for m in metrics:
             if m == 'micro_f1':
                 v_max, t_max = 0, 0
-                for t in [0.5]: #np.linspace(0.2, 0.7, 50):
+                for t in [0.5]:  # np.linspace(0.2, 0.7, 50):
                     p = mtx.step(y_pred, threshold=t)
                     v = mtx.micro_f1(y_true, p)
                     if v_max < v:
