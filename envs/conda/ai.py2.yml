@@ -1,0 +1,80 @@
+###
+# create environment: conda env create -f ai.py2.yml
+###
+
+name: ai
+channels:
+  - https://conda.anaconda.org/trung 
+  - https://conda.anaconda.org/conda-forge
+  - https://conda.anaconda.org/numba 
+  - defaults
+dependencies:
+  - python=2.7
+  
+  # scienctific computing
+  - numpy
+  - scipy
+  
+  # visualization
+  - matplotlib
+  - seaborn 
+  - pandas
+  - sympy
+  - nose
+  - numba
+  - nltk
+  - coloredlogs
+  - tqdm
+
+  # CLI UI
+  - docopt
+
+  # Configs
+  - dotmap
+
+  # interactive ipython and notebook
+  - ipython
+  - jupyter
+  - notedown #convert markdown to ipynb
+  - ipywidgets
+
+  # speech processing
+  - libsamplerate
+  - pysoundfile # read sph audio file python
+  - resampy
+
+  # data science tools
+  - pymc
+  - scikit-learn=0.18.1
+
+  # data management
+  - h5py # create dataset
+  - pytables
+  - pymongo
+  - pyyaml
+  - lxml
+  - openpyxl # read excel
+  - xlwt # create excel
+  - msgpack-python # binary serialization format
+  - pydot-ng
+
+  - llvmlite=0.18.0
+
+  - pip:
+    # Lock version for key libraries only
+    - tensorflow-gpu==1.4.1
+    - theano==0.9.0
+    - librosa==0.5.0
+    - keras==2.0.2
+    - hyperopt==0.1
+    - networkx==1.11 # for hyperopt
+    - pydot==1.0.28
+    - pydot-ng>=1.0.0
+    - six>=1.10.0
+    - pafy
+    - soundfile
+    # DCASE 2017 evaluation
+    - sed_eval==0.1.8
+    - youtube-dl
+    # parallel
+    - p_tqdm

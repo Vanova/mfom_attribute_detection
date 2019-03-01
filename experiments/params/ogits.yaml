@@ -1,0 +1,126 @@
+# Speech Attributes Detection Project Configurations
+# ==========================================================
+# Flow
+# ==========================================================
+pipeline:
+  init_dataset: true
+  extract_features: true
+  search_hyperparams: false
+  train_system: true
+  test_system: true
+
+# ==========================================================
+# General
+# ==========================================================
+experiment:
+  name: ogits
+  development_dataset: /home/vano/wrkdir/datasets/OGI-ML
+  submission_dataset: /home/vano/wrkdir/datasets/OGI-ML
+  lists_dir: ../data/ogits_meta
+  attribute_class: place # manner fusion
+
+# ==========================================================
+# Paths of the experiment
+# ==========================================================
+path:
+  base: system/
+  meta: meta_data/
+  logs: logs/
+  features: features/
+  models: models/
+  hyper_search: hyper_search/
+  train_result: train_results/
+  submission: submissions/
+
+# ==========================================================
+# Feature extraction
+# ==========================================================
+features:
+  type: fbank
+
+  fbank:
+    bands: 96
+    fmax: 4000 # sample rate 8000Hz / 2
+    fmin: 0
+    hop_length_seconds: 0.02
+    htk: false
+    include_delta: false
+    include_acceleration: false
+    mono: true
+    n_fft: 512
+    window: hamming_asymmetric
+    win_length_seconds: 0.04
+    delta:
+      width: 9
+    acceleration:
+      width: 9
+
+  stft: # bands number = n_fft/2
+    fmin: 0
+    fmax: 4000
+    hop_length_seconds: 0.02
+    htk: false
+    include_delta: false
+    include_acceleration: false
+    mono: true
+    n_fft: 1024
+    window: hamming_asymmetric
+    win_length_seconds: 0.04
+    delta:
+      width: 9
+    acceleration:
+      width: 9
+
+
+# ==========================================================
+# Model settings
+# ==========================================================
+model:
+  type: sed_ogits
+
+  sed_ogits:
+    do_pretrain: true
+    do_finetune: true
+    pretrain_set:
+      metrics: [class_wise_eer, pooled_eer, micro_f1]
+      activation: elu
+      batch: 32
+      batch_type: sed_sequence  # see src/data_loader/ogits.py
+      context_wnd: 128          # frame context
+      dropout: 0.1
+      feature_maps: 96
+      loss: binary_crossentropy # see src/model/objectives.py
+      learn_rate: 0.0001
+      n_epoch: 400
+      optimizer: adam
+      out_score: sigmoid
+
+    finetune_set:
+      activation: elu
+      metrics: [class_wise_eer, pooled_eer, micro_f1]
+      batch: 32
+      batch_type: sed_sequence
+      context_wnd: 128
+      dropout: 0.1
+      freeze_wt: false
+      feature_maps: 96
+      loss: mfom_eer_normalized # see src/model/objectives.py
+      learn_rate: 0.0001
+      n_epoch: 400
+      optimizer: adam # adadelta
+      out_score: tanh
+
+
+# ==========================================================
+# Trainer settings
+# ==========================================================
+callback:
+  monitor: class_wise_eer # micro_f1
+  mode: min # max for micro_f1
+  chpt_save_best_only: true
+  chpt_save_weights_only: true
+  lr_factor: 0.5
+  lr_patience: 20
+  lr_min: 0.000001
+  estop_patience: 25
+  tensorboard_write_graph: true

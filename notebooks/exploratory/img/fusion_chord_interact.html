@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {
+  font: 10px sans-serif;
+  }
+
+  .tooltip-rect {
+        fill: grey;
+        opacity: .8;
+  }
+
+  .tooltip-text {
+        font-size: 12;
+        fill: white;
+  }
+
+  .chord path {
+    fill-opacity: .67;
+    stroke: #000;
+    stroke-width: .5px;
+  }
+</style>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+</head>
+<body>
+  <script>
+
+  // Setup data
+
+  // Matrix created from the dataset
+  var matrix = [
+[0, 20979, 22231, 1000, 15456, 3311, 0, 0, 0, 18061, 4332, 24911, 0, 47560, 2205],
+[20979, 0, 10844, 445, 1681, 0, 1847, 0, 0, 5909, 0, 8469, 0, 13510, 0],
+[22231, 10844, 0, 3545, 0, 6045, 6624, 0, 0, 0, 6303, 0, 643, 10546, 0],
+[1000, 445, 3545, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[15456, 1681, 0, 0, 0, 2052, 4362, 0, 0, 0, 2214, 0, 0, 21117, 0],
+[3311, 0, 6045, 0, 2052, 0, 0, 0, 952, 0, 7496, 0, 0, 34708, 31457],
+[0, 1847, 6624, 0, 4362, 0, 0, 0, 0, 9014, 0, 7984, 0, 20770, 0],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26149, 26149],
+[0, 0, 0, 0, 0, 952, 0, 0, 0, 0, 0, 0, 0, 45778, 45778],
+[18061, 5909, 0, 0, 0, 0, 9014, 0, 0, 0, 0, 0, 2572, 29647, 0],
+[4332, 0, 6303, 0, 2214, 7496, 0, 0, 0, 0, 0, 0, 0, 3413, 0],
+[24911, 8469, 0, 0, 0, 0, 7984, 0, 0, 0, 0, 0, 12050, 15827, 0],
+[0, 0, 643, 0, 0, 0, 0, 0, 0, 2572, 0, 12050, 0, 5911, 0],
+[47560, 13510, 10546, 0, 21117, 34708, 20770, 26149, 45778, 29647, 3413, 15827, 5911, 0, 104637],
+[2205, 0, 0, 0, 0, 31457, 0, 26149, 45778, 0, 0, 0, 0, 104637, 0]
+];
+
+  // The lables for the chord groups
+
+  //var groupLables = ["Non-users", "Healthy", "Low", "Moderate", "High", "Very high"];
+  //var groupColors = ["blue", "green", "yellow", "orange", "purple", "red"];
+  var groupLables = ['coronal', 'dental', 'fricative', 'glottal', 'glides', 'high', 'labial', 'low', 'middle', 'nasal', 'palatal', 'stop', 'velar', 'voiced', 'vowel'];
+  var groupColors = d3.range(20).map(d3.scale.category20())
+
+  // The chord lyaout maps the matirx data into a group of arcs with their radian angles
+  var chord = d3.layout.chord()
+    .padding(.05)
+    .sortSubgroups(d3.descending)
+    .matrix(matrix);
+
+  // The size of the svg viewport and the radius values for the circle used for the chart
+  var width = 960,
+      height = 600,
+      innerRadius = Math.min(width, height) * .31,
+      outerRadius = innerRadius * 1.1;
+
+  // Create the svg viewport
+  var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      // Append a group and move it to the center of the viewport
+      .append("g")
+      .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+  // Create group for user instructions
+  var ig = d3.select("svg").append("g")
+    .attr("transform", function() { return "translate(20,500)"; })
+  ig.append("rect")
+    .attr("width", 200).attr("height", 50)
+    .attr("rx", 10).attr("ry", 10)
+    .attr("class", "tooltip-rect");
+  ig.append("text").attr("x", 10).attr("y", 5)
+    .attr("class", "tooltip-text")
+    .append("tspan").attr("x", 10).attr("dy", 15)
+      .text("-> Mouseover the arcs for group totals")
+    .append("tspan").attr("x", 10).attr("dy", 15)
+      .text("-> Mouseover the chords for values");
+
+  // Setup the arc path generator with the predetermined radius values
+  var arc = d3.svg.arc()
+      .innerRadius(innerRadius)
+      .outerRadius(outerRadius);
+
+  // Setup a group for the chords. Each group contains the data mappings for each chord which will be used
+  // next when generatin the paths
+  var chordGroup = svg.selectAll()
+      .data(chord.groups)
+      .enter()
+        .append("g");
+
+  // Generate paths for each chord using the chord group above
+  chordGroup.append("path")
+      .style("fill", function(d) { return groupColors[d.index]; })
+      .style("stroke", "black")
+      .attr("id", function(d, i) {return "group" + i ;})
+      .attr("d", arc)
+      .on("mouseover.one", groupFade(.1))
+      .on("mouseover.two", groupSelect())
+      .on("mouseout.one", groupFade(1))
+      .on("mouseout.two", groupDeselect());
+
+  // Pass each chord group to the groupTicks method which will the require ticks and place them in groups
+  // Each tick in the group is transformed by rotating them 180 degreese perpendicular to the corresponding radiun angle
+  // and then moving it to the outer radius of the circle
+  var ticks = chordGroup.selectAll()
+      .data(groupTicks)
+      .enter()
+        .append("g")
+        .attr("transform", function(d) {
+            return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")" + " translate(" + outerRadius + ",0)";
+          });
+
+  // For each of the tick groups append the tick line and set its stroke
+  ticks.append("line")
+      .attr("x1", 1)
+      .attr("y1", 0)
+      .attr("x2", 5)
+      .attr("y2", 0)
+      .style("stroke", "#000");
+
+  // For each tick group append the tick lable
+  // The tick lable is only set for numbers divisible by 5, others will be blank
+  ticks.append("text")
+      .attr("x", 8)
+      .attr("dy", ".35em")
+      .attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180) translate(-16)" : null; })
+      .attr("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+      .style("font-size", 8)
+      .text(function(d) { return d.label; });
+
+  // The following is an alternative way of displaying lables along the arcs of the circle
+  /*
+  // Add a text path label.
+  var groupText = chordGroup.append("text")
+      .attr("x", 8)
+      .attr("dy", 15)
+      //.attr("x", 8)
+      //.attr("dy", ".35em")
+      //.attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180) translate(16)" : null; })
+      //.style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+      //.style("fill", "Blue")
+      .text(function(d) { return d.label; });
+
+  groupText.append("textPath")
+      .attr("xlink:href", function(d, i) { return "#group" + i ;})
+      .text(function(d, i) { return datatext[i] ;});
+  */
+
+  // For each chord in the group group append the group lable.
+  // This is similar to how the ticks were added, but here we use the chord group created ealier
+  // For each chord in chord group we find the middle between the start and end angles, then place the text there by
+  // first rotating it 180 degrees perpendicular to the angle and then moving it to 50 pixels outside the inner radius
+  chordGroup.append("text")
+      .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
+      .attr("dy", ".35em")
+      .attr("transform", function(d) {
+    		  return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+    		    + "translate(" + (innerRadius + 50) + ")" + (d.angle > Math.PI ? "rotate(180)" : "");
+          } )
+      .attr("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+      .style("font-size", 12).style("font-weight", "bold")
+      .text(function(d,i) { return groupLables[i]; });
+
+  // Append a new group to the viewport, then append the chord paths using the chord path generator
+  // The chords are bound to the data provided by the chord layout whcih was derived from the matrix
+  svg.append("g")
+      .attr("class", "chord")
+      .selectAll("path")
+      .data(chord.chords)
+      .enter()
+        .append("path")
+        .attr("d", d3.svg.chord().radius(innerRadius))
+        .style("fill", function(d) { return groupColors[d.target.index]; })
+        .style("opacity", 1)
+        .on("mouseover.one", chordFade(.1))
+        .on("mouseover.two", chordSelect())
+        .on("mouseout.one", chordFade(1))
+        .on("mouseout.two", chordDeselect());
+
+  // Returns an array of tick angles and labels, given a group.
+  function groupTicks(d) {
+      var k = (d.endAngle - d.startAngle) / d.value;
+      return d3.range(0, d.value, 20000).map(function(v, i) {
+        return {
+          angle: v * k + d.startAngle, // v in [0, d.value] , 10000 - step
+          label: i % 2 ? null : v/1000 + 'K'
+        };
+      });
+    }
+
+  // Returns an event handler for fading a given chord group.
+  function groupFade(opacity) {
+      return function(g, i) {
+        svg.selectAll(".chord path")
+          .filter(function(d) {
+              return d.source.index != i && d.target.index != i;
+            })
+          .style("opacity", opacity);
+      };
+  }
+
+  function groupSelect() {
+    return function(g, i) {
+      var tg = d3.select("svg").append("g")
+        .attr("id", "tt")
+        .attr("transform", function() { return "translate(750,40)"; })
+
+      tg.append("rect")
+        .attr("width", 200).attr("height", 80)
+        .attr("rx", 10).attr("ry", 10)
+        .attr("class", "tooltip-rect");
+      tg.append("text").attr("x", 10).attr("y", 5)
+        .attr("class", "tooltip-text")
+        .append("tspan").attr("x", 10).attr("dy", 15)
+          .text(groupLables[g.index] + " group total : " + Math.round(g.value));
+      }
+  }
+
+  function groupDeselect() {
+    return function(c, i) {
+      d3.select("#tt").remove();
+    };
+  }
+
+  function chordFade(opacity) {
+    return function(c, i) {
+      svg.selectAll(".chord path")
+        .filter(function(d) {
+            return !(d.source.index == c.source.index && d.target.index == c.target.index);
+        })
+        .style("opacity", opacity);
+    };
+  }
+
+  function chordSelect() {
+    return function(c, i) {
+      var tg = d3.select("svg").append("g")
+        .attr("id", "tt")
+        .attr("transform", function() { return "translate(750,40)"; })
+
+      tg.append("rect")
+        .attr("width", 200).attr("height", 80)
+        .attr("rx", 10).attr("ry", 10)
+        .attr("class", "tooltip-rect");
+      tg.append("text").attr("x", 10).attr("y", 5)
+        .attr("class", "tooltip-text")
+        .append("tspan").attr("x", 10).attr("dy", 15)
+          .text("from " + groupLables[c.source.subindex] + " to " + groupLables[c.source.index] + " : " +  c.source.value)
+        .append("tspan").attr("x", 10).attr("dy", 15)
+          .text("from " + groupLables[c.target.subindex] + " to " + groupLables[c.target.index]  +" : " +  c.target.value);
+      }
+  }
+
+  function chordDeselect() {
+    return function(c, i) {
+      d3.select("#tt").remove();
+    };
+  }
+
+  </script>
+</body>
+</html>
