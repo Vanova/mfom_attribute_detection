@@ -1,11 +1,17 @@
-Base Framework
-==============
+# The MFoM Framework for Speech Attribute Detection
+-------------------------------------------------
 
-Python basic framework for speech processing, speech articulatory feature detection 
-(such as manner and place of articulation), image recognition.
-This framework is used as the starting code for NIST LRE 2017, DCASE 2017 and other experiments.
+Project architecture
+=============================
 
-# Project Structure
+The main abstract classes are in `base` folder.
+
+![Architecture of the base framework](../docs/figures/architecture_base_framework.png)
+
+
+Structure of packages
+=====================
+
 
 ```
 Packages structure

@@ -53,8 +53,8 @@ class UvZMisclassification(_Merge):
         zeros_avg = K.log(self._non_zero_mean(zeros_avg))
         # misclassification measure
         # TODO NOTE: sometimes works better with 0.5
-        psi = -y_pred + 0.5
-        # psi = -y_pred + y_neg * unit_avg + y_true * zeros_avg
+        # psi = -y_pred + 0.5
+        psi = -y_pred + y_neg * unit_avg + y_true * zeros_avg
         return psi
 
     def _non_zero_mean(self, x):
