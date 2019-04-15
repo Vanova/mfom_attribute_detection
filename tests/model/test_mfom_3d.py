@@ -47,7 +47,7 @@ if __name__ == '__main__':
     x = Permute((2, 1))(feat_input)
     for _f in [256, 64]:
         x = TimeDistributed(Dense(_f))(x)
-        # x = Activation(activation='elu')(x)
+        x = Activation(activation='elu')(x)
         x = Dropout(0.5)(x)
     x = TimeDistributed(Dense(nclass))(x)
     y_pred = Activation(activation='tanh', name='output')(x)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     # compile model
     model = Model(input=[y_true, feat_input], output=out)
-    model.compile(loss=obj.mfom_eer_normalized, optimizer='Adadelta') # Adam, Adadelta
+    model.compile(loss=obj.mfom_eer_normalized, optimizer='Adadelta')
     model.summary()
 
     # train
@@ -87,22 +87,11 @@ if __name__ == '__main__':
     print('l_EER: %.4f' % eer_val)
     print(model.evaluate([all_Y, all_X], all_Y))
 
-    # TODO notice from the experiments:
-    # when we minimize obj.mfom_microf1 with psi = y_pred or psi = -y_pred + 0.5 in
-    # UvZMisclassification() layer, the smoothF1 is minimized !!! but EER is not at all.
-    # When we minimize obj.mfom_microf1 with psi = -y_pred + y_neg * unit_avg + y_true * zeros_avg,
-    # then both smoothF1 and EER are minimized :)
-
     # history plot, alpha and beta params
     m = model.get_layer('smooth_error_counter')
     print('alpha: ', K.get_value(m.alpha))
     print('beta: ', K.get_value(m.beta))
 
     # print stats of psi misclassification measure
-    # m = model.get_layer('uvz_misclass')
-    # print('stats_d: ', K.get_value(m.stats_psi))
     plt.plot(hist.history['loss'])
     plt.show()
-
-    # TODO test MFoM with honest uvz-misclassification,
-    # TODO test for 2 classes and check Triplet loss symptoms

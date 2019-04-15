@@ -1,7 +1,7 @@
 #!/bin/bash
 # OGA-TS model runner
 
-export PYTHONPATH="/home/vano/wrkdir/projects/Python/attribute_detection/:$PYTHONPATH"
+export PYTHONPATH="`pwd`/:$PYTHONPATH"
 source activate ai # activate conda environment
 
 model=sed_ogits

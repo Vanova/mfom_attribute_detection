@@ -1,83 +1,100 @@
+"""
+    Simulate multi-label classification.
+"""
 import numpy as np
 import keras.backend as K
 from keras.models import Model
 from keras.layers import Dense, Activation, Input
+import keras.regularizers as regs
+import keras.constraints as constraints
 import matplotlib.pyplot as plt
+from sklearn.datasets import make_multilabel_classification
+from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 import src.model.mfom as mfom
 import src.utils.metrics as MT
 import src.model.objectives as obj
 
-np.random.seed(777)
+RANDOM_SEED = 777
+np.random.seed(RANDOM_SEED)
 
 
-def generate_dataset(output_dim=14, num_examples=10000):
-    """
-    Summation of two binary numbers.
-    Input is two binary numbers, stacked in one vector.
-    Output is an integer number.
-    """
-
-    def int2vec(x, dim=output_dim):
-        out = np.zeros(dim)
-        binrep = np.array(list(np.binary_repr(x))).astype('int')
-        out[-len(binrep):] = binrep
-        return out
-
-    x_left_int = (np.random.rand(num_examples) * 2 ** (output_dim - 1)).astype('int')
-    x_right_int = (np.random.rand(num_examples) * 2 ** (output_dim - 1)).astype('int')
-    y_int = x_left_int + x_right_int
-
-    x = list()
-    for i in range(len(x_left_int)):
-        x.append(np.concatenate((int2vec(x_left_int[i]), int2vec(x_right_int[i]))))
-
-    y = list()
-    for i in range(len(y_int)):
-        y.append(int2vec(y_int[i]))
-
-    x = np.array(x)
-    y = np.array(y)
-    return x, y
+def generate_dataset(n_smp=300, ratio=0.3, n_feat=2, n_cls=2):
+    x, y = make_multilabel_classification(n_samples=n_smp, n_features=n_feat,
+                                          n_classes=n_cls, n_labels=1,
+                                          allow_unlabeled=False,
+                                          random_state=RANDOM_SEED)
+    scaler = preprocessing.StandardScaler()
+    x = scaler.fit_transform(x)
+    x_tr, x_tst, y_tr, y_tst = train_test_split(x, y, test_size=ratio, random_state=RANDOM_SEED)
+    return x_tr, x_tst, y_tr, y_tst
 
 
-if __name__ == '__main__':
-    dim = 14
-    nclass = 7
-
-    # Input block
-    feat_input = Input(shape=(dim,), name='main_input')
+def mfom_model(in_dim, nclass):
+    # input block
+    feat_input = Input(shape=(in_dim,), name='main_input')
     # layer 1
-    x = Dense(30, name='dense1')(feat_input)
+    x = Dense(10, name='dense1')(feat_input)
     x = Activation(activation='sigmoid', name='act1')(x)
+    # layer 2
+    x = Dense(10, name='dense2')(x)
+    x = Activation(activation='sigmoid', name='act2')(x)
     # output layer
     x = Dense(nclass, name='pre_activation')(x)
     y_pred = Activation(activation='sigmoid', name='output')(x)
 
+    # === MFoM head ===
     # misclassification layer, feed Y
     y_true = Input(shape=(nclass,), name='y_true')
     psi = mfom.UvZMisclassification(name='uvz_misclass')([y_true, y_pred])
 
     # class Loss function layer
-    out = mfom.SmoothErrorCounter(name='smooth_error_counter')(psi)
+    # NOTE: you may want to add regularization or constraints
+    out = mfom.SmoothErrorCounter(name='smooth_error_counter',
+                                  # alpha_constraint=constraints.min_max_norm(min_value=-4., max_value=4.),
+                                  # alpha_regularizer=regs.l1(0.001),
+                                  # beta_constraint=constraints.min_max_norm(min_value=-4., max_value=4.),
+                                  # beta_regularizer=regs.l1(0.001)
+                                  )(psi)
 
     # compile model
     model = Model(input=[y_true, feat_input], output=out)
+    return model
+
+
+def cut_mfom(model):
+    # calc accuracy: cut MFoM head, up to sigmoid output
+    input = model.get_layer(name='main_input').output
+    out = model.get_layer(name='output').output
+    cut_net = Model(input=input, output=out)
+    return cut_net
+
+
+if __name__ == '__main__':
+    dim = 20
+    nclass = 10
+
+    # mfom model
+    model = mfom_model(dim, nclass)
     model.compile(loss=obj.mfom_eer_normalized, optimizer='Adam')
     model.summary()
 
-    # train
-    X, Y = generate_dataset(output_dim=nclass)
-    hist = model.fit([Y, X], Y, nb_epoch=100, batch_size=16)
+    # training on multi-label dataset
+    x_train, x_test, y_train, y_test = generate_dataset(n_smp=10000, n_feat=dim, n_cls=nclass)
+    mask = y_train.sum(axis=-1) != nclass
+    y_train = y_train[mask]
+    x_train = x_train[mask]
+    hist = model.fit([y_train, x_train], y_train, nb_epoch=10, batch_size=16)
 
-    # calc accuracy: we cut MFoM head, up to sigmoid output
-    input = model.get_layer(name='main_input').output
-    out = model.get_layer(name='output').output
-    cut_model = Model(input=input, output=out)
-    y_pred = cut_model.predict(X)
-    eer_val = MT.eer(y_true=Y.flatten(), y_pred=y_pred.flatten())
+    # cut MFoM head
+    cut_model = cut_mfom(model)
+    y_pred = cut_model.predict(x_test)
+
+    # evaluate
+    eer_val = MT.eer(y_true=y_test.flatten(), y_pred=y_pred.flatten())
     print('EER: %.4f' % eer_val)
 
-    # history plot, alpha and beta params
+    # history plot, alpha and beta params of MFoM
     m = model.get_layer('smooth_error_counter')
     print('alpha: ', K.get_value(m.alpha))
     print('beta: ', K.get_value(m.beta))

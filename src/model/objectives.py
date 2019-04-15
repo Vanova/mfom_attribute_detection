@@ -33,12 +33,12 @@ def mfom_eer_normalized(y_true, y_pred):
     # smooth false negative and false positive rates
     fnr = K.log(K.sum(fn, axis=0) + 1.) - K.log(P + 1.)
     fpr = K.log(K.sum(fp, axis=0) + 1.) - K.log(N + 1.)
-    fnr = K.exp(fnr)
-    fpr = K.exp(fpr)
-    smooth_eer = fpr + .5 * K.abs(fnr - fpr)
     # debug output
     # fnr = K.print_tensor(K.exp(fnr), message="FNR is: ")
     # fpr = K.print_tensor(K.exp(fpr), message="FPR is: ")
+    fnr = K.exp(fnr)
+    fpr = K.exp(fpr)
+    smooth_eer = fpr + .5 * K.abs(fnr - fpr)
     return K.mean(smooth_eer)
 
 
