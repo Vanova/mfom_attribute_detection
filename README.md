@@ -262,16 +262,16 @@ Citation
 
 If you use the code or materials of this project, please cite as
 ```bibteh
-@inproceedings{DBLP:conf/slt/KukanovHSL16,
-  author    = {Ivan Kukanov and Ville Hautam{\"{a}}ki and
-               Sabato Marco Siniscalchi and Kehuang Li},
-  title     = {Deep learning with maximal figure-of-merit cost to advance multi-label
-               speech attribute detection},
-  booktitle = {2016 {IEEE} Spoken Language Technology Workshop, {SLT} 2016, San Diego,
-               CA, USA, December 13-16, 2016},
-  pages     = {489--495},
-  year      = {2016},
-  doi       = {10.1109/SLT.2016.7846308}
+@ARTICLE{8952610,  
+  author = {I. {Kukanov} and T. N. {Trong} and V. {Hautamäki} and 
+            S. M. {Siniscalchi} and V. M. {Salerno} and K. A. {Lee}},
+  journal = {IEEE/ACM Transactions on Audio, Speech, and Language Processing},
+  title = {Maximal Figure-of-Merit Framework to Detect Multi-Label Phonetic Features 
+           for Spoken Language Recognition},   
+  year={2020},  
+  volume={28},  
+  number={},  
+  pages={682-695}
 }
 ```
 
